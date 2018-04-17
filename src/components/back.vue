@@ -1,5 +1,7 @@
 <template>
   <b-container fluid id="app">
+
+    <!--登入><-->
     <div class="row">
       <div class="col-sm-6 col-md-4 offset-md-4" v-if="logged === false">
         <h1 class="text-center login-title"><b>登入之後繼續</b></h1>
@@ -16,9 +18,14 @@
           </form>
         </div>
       </div>
+
+      <!--登入完之後><-->
     </div>
     <b-card no-body v-if="logged === true">
       <b-tabs pills card vertical nav-wrapper-class="w-50">
+
+        <!--現有文章><-->
+
         <b-tab title="Tab 1" active>
           <ul>
             <li v-for="(data, index) in item" style="margin-bottom: 15px">
@@ -45,12 +52,36 @@
                         <p>請輸入標題：</p>
                         <b-form-input placeholder="請輸入標題" v-model="editTitle" class="mb-5"></b-form-input>
                         <p>請輸入圖片網址：</p>
-                        <b-form-input placeholder="請輸入圖片網址" v-model="editInnerPic" class="mb-5"></b-form-input>
+                        <b-input-group prepend="圖片" class="mb-5">
+                          <b-form-input placeholder="請輸入圖片" v-model="editInnerPic"></b-form-input>
+                          <b-input-group-append>
+                            <b-button variant="info" @click="addInnerPicEdit(editInnerPic)">新增</b-button>
+                          </b-input-group-append>
+                        </b-input-group>
+                        <b-list-group v-if="editInnerPicArray !== null" class="mb-3">
+                          <b-list-group-item class="mb-2 text-dark" v-for="item in editInnerPicArray" :key="item.id">
+                            <b-img :src="item" fluid></b-img>
+                            #{{item}}
+                            <b-button class="btn-danger float-right" @click="deleteInnerPicFormArrayEdit(item)">刪除</b-button>
+                          </b-list-group-item>
+                        </b-list-group>
                       </b-col>
                       <b-col cols="12">
                         <p>請輸入內文：</p>
                         <b-form-textarea placeholder="請輸入內文" v-model="editInnerText" rows="3"></b-form-textarea>
+                        <b-input-group prepend="標籤" class="mb-5">
+                          <b-form-input placeholder="請輸入標籤" v-model="editHashTagText"></b-form-input>
+                          <b-input-group-append>
+                            <b-button variant="info" @click="addHashTagEdit(editHashTagText)">新增</b-button>
+                          </b-input-group-append>
+                        </b-input-group>
+                        <b-list-group v-if="editHashTagArray !== null" class="mb-3">
+                          <b-list-group-item class="mb-2 text-dark" v-for="item in editHashTagArray" :key="item.id">#{{item}}
+                            <b-button class="btn-danger float-right" @click="deleteHashTagFromArrayEdit(item)">刪除</b-button>
+                          </b-list-group-item>
+                        </b-list-group>
                         <b-button class="btn mt-4 mb-5" @click="saveEditedData(index)">保存</b-button>
+                        <b-button class="btn mt-4 mb-5" @click="cancelEditData(index)">取消編輯</b-button>
                       </b-col>
                     </b-row>
                   </div>
@@ -59,6 +90,11 @@
             </li>
           </ul>
         </b-tab>
+
+
+        <!--新增貼文><-->
+
+
         <b-tab title="Tab 2">
           <b-form>
             <b-input-group prepend="標題" class="mb-5">
@@ -72,6 +108,7 @@
             </b-input-group>
             <b-list-group class="mb-5">
               <b-list-group-item v-for="pic in inputInnerPic" :key="pic.id">{{pic}}
+                <b-img :src="pic" fluid></b-img>
                 <b-button class="btn-danger float-right" @click="deletePicArray(pic)">刪除</b-button>
               </b-list-group-item>
             </b-list-group>
@@ -96,6 +133,12 @@
             <b-button class="btn-outline-info" @click="newPost">送出</b-button>
           </b-form>
         </b-tab>
+
+
+
+        <!--編輯ＵＩ> <-->
+
+
         <b-tab title="hashTag 測試">
           <b-input-group prepend="導覽列文字">
             <b-form-input v-model="inputNavBarText"></b-form-input>
@@ -121,7 +164,6 @@
           <b-img class="mb-5" :src="getHeadPic" fluid v-if="getHeadPic !== ''"></b-img>
           <b-input-group prepend="自我介紹文字" class="mb-5">
             <b-form-textarea v-model="inputProfileText"
-                             placeholder="請輸入您的寶貴意見。"
                              :rows="3"
                              :max-rows="6"
                              name="name">
@@ -130,7 +172,7 @@
               <b-button variant="info" @click="editProfileText">修改</b-button>
             </b-input-group-append>
           </b-input-group>
-          <p class="mb-5">{{inputProfileText}}</p>
+          <p class="mb-5">現在的自我介紹是：<code>{{getProfileText}}</code></p>
           <b-input-group prepend="自我介紹頭圖">
             <b-form-input v-model="inputProfilePic"></b-form-input>
             <b-input-group-append>
@@ -209,6 +251,7 @@
         inputInnerPic: [],
         inputInnerPicText: '',
         editInnerPic: '',
+        editInnerPicArray: [],
         inputHashTagArray: [],
         editHashTagArray: [],
         inputHashTagText: '',
@@ -242,6 +285,13 @@
           return 'none'
         }
         return this.itemUI[this.UIBase].headPic
+      },
+      getProfileText () {
+        if (this.itemUI[this.UIBase] === undefined) {
+          return 'none'
+        }
+        this.inputProfileText = this.itemUI[this.UIBase].profileText
+        return this.itemUI[this.UIBase].profileText
       },
       getProfilePic() {
         if (this.itemUI[this.UIBase] === undefined) {
@@ -291,7 +341,7 @@
         this.inputInnerPic.splice(this.inputInnerPic.indexOf(item), 1)
       },
       newPost() {
-        if (this.inputTitle !== '' && this.inputInnerPic !== '') {
+        if (this.inputTitle !== '' && this.inputInnerPic !== '' && this.inputHashTagArray !== null) {
           databaseContent.push({
             title: this.inputTitle,
             text: this.inputInnerText,
@@ -301,6 +351,8 @@
             pinned: false,
             time: getTime()
           })
+        } else {
+          return alert('有一些資料還沒填ㄛ')
         }
         this.inputTitle = ''
         this.inputInnerText = ''
@@ -318,17 +370,37 @@
           editing = snap.val()
         })
         editing = !editing
-        databaseContent.child(e).child('editing').set(editing)
+        databaseContent.child(e).update({'editing':editing})
         this.editTitle = this.item[e].title
-        this.editInnerPic = this.item[e].pic
+        this.editInnerPicArray = this.item[e].pic
         this.editInnerText = this.item[e].text
         this.editHashTagArray = this.item[e].hashTag
+      },
+      cancelEditData(e) {
+        let editing
+        databaseContent.child(e).child('editing').once('value', (snap) => {
+          editing = snap.val()
+        })
+        editing = false
+        databaseContent.child(e).update({'editing':editing})
+      },
+      deleteInnerPicFormArrayEdit(item) {
+        this.editInnerPicArray.splice(this.inputHashTagArray.indexOf(item), 1)
+      },
+      addInnerPicEdit(item) {
+        this.editInnerPicArray.push(item)
+      },
+      addHashTagEdit(item) {
+        this.editHashTagArray.push(item)
+      },
+      deleteHashTagFromArrayEdit (item) {
+        this.editHashTagArray.splice(this.editHashTagArray.indexOf(item), 1)
       },
       saveEditedData(e) {
         databaseContent.child(e).update({
           title: this.editTitle,
           text: this.editInnerText,
-          pic: this.editInnerPic,
+          pic: this.editInnerPicArray,
           hashTag: this.editHashTagArray,
           editing: false
         })
@@ -399,7 +471,7 @@
             })
             vm.itemUI = snap.val()
           })
-          vm.inputProfileText = vm.itemUI[vm.UIBase].profileText
+
           vm.logged = true
           vm.getHashTag()
         } else {
@@ -407,6 +479,9 @@
           // No user is signed in.
         }
       })
+    },
+    destroyed () {
+      firebase.database().ref('/test/').set({'destroyTest': true})
     }
   }
 </script>

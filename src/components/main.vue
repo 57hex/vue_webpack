@@ -490,7 +490,7 @@
     box-shadow: #000 ;
   }
   .fullScreen-block-element-arrowContainer-left:hover {
-    animation-play-state: running;
+    background-color: rgba(255,255,255,0.5);
   }
   .fullScreen-block-element-right {
     height: 1.5rem;
@@ -503,9 +503,10 @@
     top: 50%;
     right: 3%;
     z-index: 9991;
+    transition: 1s ease;
   }
   .fullScreen-block-element-arrowContainer-right:hover {
-    animation-play-state: running;
+    background-color: rgba(255,255,255,0.5);
   }
   @keyframes swingToLeft {
     0% {
